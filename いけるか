@@ -1,0 +1,117 @@
+function sortCustomerNames() {
+// アクティブなシートを取得
+const sheet = SpreadsheetApp.getActiveSheet();
+
+// A列のデータがある最終行を取得
+const lastRow = sheet.getLastRow();
+
+// データが存在しない場合の処理
+if (lastRow < 1) {
+Logger.log(‘データが見つかりません’);
+return;
+}
+
+// A列の全データを取得（A1からA列の最終行まで）
+const range = sheet.getRange(1, 1, lastRow, 1);
+const values = range.getValues();
+
+// 空の行を除外してソート
+const filteredValues = values.filter(row => row[0] !== ‘’);
+
+// あいうえお順（昇順）でソート
+// localeCompareを使用して日本語の並び替えを正確に行う
+filteredValues.sort((a, b) => {
+return a[0].toString().localeCompare(b[0].toString(), ‘ja’, {
+numeric: true,
+sensitivity: ‘base’
+});
+});
+
+// 元のデータをクリア
+sheet.getRange(1, 1, lastRow, 1).clearContent();
+
+// ソートしたデータを書き込み
+if (filteredValues.length > 0) {
+sheet.getRange(1, 1, filteredValues.length, 1).setValues(filteredValues);
+}
+
+Logger.log(`${filteredValues.length}件の顧客名をあいうえお順に並び替えました`);
+}
+
+// より詳細なソート（ヘッダー行がある場合）
+function sortCustomerNamesWithHeader() {
+const sheet = SpreadsheetApp.getActiveSheet();
+const lastRow = sheet.getLastRow();
+
+// ヘッダー行がない場合やデータが1行以下の場合
+if (lastRow <= 1) {
+Logger.log(‘ソートするデータが不足しています’);
+return;
+}
+
+// A2からA列の最終行までを取得（1行目はヘッダーとして除外）
+const range = sheet.getRange(2, 1, lastRow - 1, 1);
+const values = range.getValues();
+
+// 空の行を除外してソート
+const filteredValues = values.filter(row => row[0] !== ‘’);
+
+// あいうえお順でソート
+filteredValues.sort((a, b) => {
+return a[0].toString().localeCompare(b[0].toString(), ‘ja’, {
+numeric: true,
+sensitivity: ‘base’
+});
+});
+
+// 元のデータをクリア（ヘッダー行は残す）
+if (lastRow > 1) {
+sheet.getRange(2, 1, lastRow - 1, 1).clearContent();
+}
+
+// ソートしたデータを書き込み
+if (filteredValues.length > 0) {
+sheet.getRange(2, 1, filteredValues.length, 1).setValues(filteredValues);
+}
+
+Logger.log(`${filteredValues.length}件の顧客名をあいうえお順に並び替えました`);
+}
+
+// 複数列のデータがある場合（顧客名と一緒に他の情報も移動）
+function sortCustomerDataWithMultipleColumns() {
+const sheet = SpreadsheetApp.getActiveSheet();
+const lastRow = sheet.getLastRow();
+const lastCol = sheet.getLastColumn();
+
+if (lastRow <= 1) {
+Logger.log(‘ソートするデータが不足しています’);
+return;
+}
+
+// 全データを取得（ヘッダー行を除く）
+const range = sheet.getRange(2, 1, lastRow - 1, lastCol);
+const values = range.getValues();
+
+// A列（顧客名）が空でない行のみを抽出
+const filteredValues = values.filter(row => row[0] !== ‘’);
+
+// A列（顧客名）を基準にあいうえお順でソート
+filteredValues.sort((a, b) => {
+return a[0].toString().localeCompare(b[0].toString(), ‘ja’, {
+numeric: true,
+sensitivity: ‘base’
+});
+});
+
+// 元のデータをクリア（ヘッダー行は残す）
+if (lastRow > 1) {
+sheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
+}
+
+// ソートしたデータを書き込み
+if (filteredValues.length > 0) {
+sheet.getRange(2, 1, filteredValues.length, lastCol).setValues(filteredValues);
+}
+
+Logger.log(`${filteredValues.length}件のデータを顧客名（A列）基準であいうえお順に並び替えました`);
+}
