@@ -1,0 +1,103 @@
+function copyRedBackgroundData() {
+const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+// 原本シートと名簿シートを取得
+const originalSheet = spreadsheet.getSheetByName(‘原本’);
+const rosterSheet = spreadsheet.getSheetByName(‘名簿’);
+
+if (!originalSheet || !rosterSheet) {
+throw new Error(‘原本シートまたは名簿シートが見つかりません’);
+}
+
+// 原本シートの最終行を取得
+const lastRow = originalSheet.getLastRow();
+
+if (lastRow < 6) {
+console.log(‘データがありません’);
+return;
+}
+
+// C6からC最終行までの範囲を取得
+const cRange = originalSheet.getRange(`C6:C${lastRow}`);
+const dRange = originalSheet.getRange(`D6:D${lastRow}`);
+
+// C列の背景色と値を取得
+const cBackgrounds = cRange.getBackgrounds();
+const cValues = cRange.getValues();
+const dValues = dRange.getValues();
+
+// 赤色背景のデータを抽出
+const redData = [];
+
+for (let i = 0; i < cBackgrounds.length; i++) {
+const backgroundColor = cBackgrounds[i][0];
+
+```
+// 赤色を判定（複数の赤色パターンに対応）
+if (isRedColor(backgroundColor)) {
+  redData.push([cValues[i][0], dValues[i][0]]); // 年月データと顧客名
+}
+```
+
+}
+
+if (redData.length === 0) {
+console.log(‘赤色背景のデータが見つかりませんでした’);
+return;
+}
+
+// 名簿シートのA列で’＊来月20日までにUP依頼’を検索
+const rosterLastRow = rosterSheet.getLastRow();
+const aColumnRange = rosterSheet.getRange(`A1:A${rosterLastRow}`);
+const aValues = aColumnRange.getValues();
+
+let targetRowIndex = -1;
+for (let i = 0; i < aValues.length; i++) {
+if (aValues[i][0] && aValues[i][0].toString().includes(’＊来月20日までにUP依頼’)) {
+targetRowIndex = i + 1; // 1ベースのインデックスに変換
+break;
+}
+}
+
+if (targetRowIndex === -1) {
+throw new Error(’「＊来月20日までにUP依頼」が見つかりませんでした’);
+}
+
+// A7から目標行-1までの利用可能な行数を計算
+const availableRows = targetRowIndex - 7; // A7から目標行の前まで
+const neededRows = redData.length;
+
+// 必要に応じて行を挿入
+if (neededRows > availableRows) {
+const rowsToInsert = neededRows - availableRows;
+rosterSheet.insertRows(targetRowIndex, rowsToInsert);
+console.log(`${rowsToInsert}行を挿入しました`);
+}
+
+// データを貼り付け
+const pasteStartRow = 7;
+const pasteRange = rosterSheet.getRange(pasteStartRow, 1, neededRows, 2); // A列とB列に貼り付け
+pasteRange.setValues(redData);
+
+console.log(`${redData.length}件の赤色背景データを名簿シートに貼り付けました`);
+}
+
+// 赤色を判定する関数
+function isRedColor(color) {
+// 赤色の判定（一般的な赤色のパターン）
+const redPatterns = [
+‘#ff0000’,  // 純粋な赤
+‘#ff6b6b’,  // 明るい赤
+‘#ff4444’,  // 赤
+‘#e74c3c’,  // 濃い赤
+‘#dc3545’,  // Bootstrap赤
+‘#d32f2f’,  // マテリアル赤
+‘#f44336’,  // マテリアル赤
+‘#ffcccc’,  // 薄い赤
+‘#ffdddd’,  // 非常に薄い赤
+‘#ffeaea’   // 極薄い赤
+];
+
+const colorLower = color.toLowerCase();
+return redPatterns.some(pattern => colorLower === pattern) || colorLower.includes(‘red’);
+}
